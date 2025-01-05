@@ -1,4 +1,9 @@
-pub fn get_config_https(host_website : &str, host_origin : &str, cache_max_size : &str, cache_ttl : &str) -> String {
+pub fn get_config_https(
+    host_website : &str, 
+    host_origin : &str, 
+    cache_max_size : &str, 
+    cache_ttl : &str, 
+) -> Result<String, String> {
     let host_website_us = host_website.replace(".", "_");
     let config = format!(
         r#"proxy_cache_path /var/www/cache/{host_website} levels=1:2 keys_zone={host_website_us}:10m max_size={cache_max_size} inactive={cache_ttl} use_temp_path=off;
@@ -8,15 +13,17 @@ server {{
 
     location / {{
         proxy_pass https://{host_origin};
-        proxy_set_header Host $host;
+        proxy_set_header Host {host_website};
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
 
         # Enable caching
         proxy_cache {host_website_us};
-        proxy_cache_valid 200 302 {cache_ttl};
-        proxy_cache_valid 404 1m;
+        proxy_cache_valid 200 301 {cache_ttl};
+        proxy_cache_valid 302 404 1m;
+        proxy_cache_background_update on;  # Enable background update
+        proxy_cache_use_stale updating error timeout invalid_header http_500 http_502 http_503 http_504;
         add_header X-Proxy-Cache $upstream_cache_status;
     }}
 
@@ -42,5 +49,5 @@ server {{
         host_website = host_website, 
         host_origin = host_origin
     );
-    return config;
+    Ok(config)
 }
