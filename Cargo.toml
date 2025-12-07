@@ -1,0 +1,8 @@
+[package]
+name = "OpenFlare-Server"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = {"version" = "1.45.1", features = ["full"]}
+trust-dns-proto = {"version" = "0.23.2"}
